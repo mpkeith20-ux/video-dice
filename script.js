@@ -7,14 +7,14 @@
     {
       brand:"Coinbase",
       spot:"Crypto Is For Small Businesses",
-      preview:"http://www.matthewkeithsound.com/s/Crypto-Is-For-Small-Businesses_SHORT.mp4",
-      full:"http://www.matthewkeithsound.com/s/Crypto-Is-For-Small-Businesses-y4w5.mp4"
+      preview:"https://www.matthewkeithsound.com/s/Crypto-Is-For-Small-Businesses_SHORT.mp4",
+      full:"https://www.matthewkeithsound.com/s/Crypto-Is-For-Small-Businesses-y4w5.mp4"
     },
     {
       brand:"Pepsi",
       spot:"Press Play On Summer",
-      preview:"http://www.matthewkeithsound.com/s/PZS_PPOS_HeroLongform_16x9_OLV_ProRes_SHORT.mp4",
-      full:"http://www.matthewkeithsound.com/s/PZS_PPOS_HeroLongform_16x9_OLV_ProRes.mp4"
+      preview:"https://www.matthewkeithsound.com/s/PZS_PPOS_HeroLongform_16x9_OLV_ProRes_SHORT.mp4",
+      full:"https://www.matthewkeithsound.com/s/PZS_PPOS_HeroLongform_16x9_OLV_ProRes.mp4"
     },
     // { brand:"Nike", spot:"Run It Back", preview:"https://...", full:"https://..." },
     // ...add more
