@@ -1,78 +1,130 @@
-body {
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background: black;
-  overflow: hidden;
-  font-family: sans-serif;
+:root {
+  color-scheme: dark;
+  --bg: #0f1116;
+  --panel: #171a22;
+  --text: #e9edf5;
+  --muted: #acb6c8;
+  --accent: #73b7ff;
+  --border: #2a2f3c;
 }
 
-.scene {
-  width: 200px;
-  height: 200px;
-  perspective: 800px;
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: radial-gradient(circle at top, #1a2030 0%, var(--bg) 55%);
+  color: var(--text);
+}
+
+.app {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+.intro {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.controls {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.picker-label {
+  font-weight: 600;
+}
+
+input[type="file"],
+input[type="number"],
+button {
+  font: inherit;
+}
+
+input[type="number"] {
+  width: 120px;
+  padding: 0.35rem 0.45rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #0f1219;
+  color: var(--text);
+}
+
+button {
+  width: fit-content;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #22283a;
+  color: var(--text);
   cursor: pointer;
 }
 
-.cube {
+button:hover {
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.summary {
+  margin: 1rem 0;
+  font-weight: 600;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+table {
   width: 100%;
-  height: 100%;
-  position: relative;
-  transform-style: preserve-3d;
-  transition: transform 1s;
+  border-collapse: collapse;
+  min-width: 760px;
+  background: var(--panel);
 }
 
-.face {
-  position: absolute;
-  width: 200px;
-  height: 200px;
-  background: #111;
-  border: 2px solid #333;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 24px;
-  color: white;
+th,
+td {
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--border);
 }
 
-.face video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 12px;
+th {
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
-/* Dice faces */
-.front  { transform: rotateY(0deg) translateZ(100px); }
-.back   { transform: rotateY(180deg) translateZ(100px); }
-.right  { transform: rotateY(90deg) translateZ(100px); }
-.left   { transform: rotateY(-90deg) translateZ(100px); }
-.top    { transform: rotateX(90deg) translateZ(100px); }
-.bottom { transform: rotateX(-90deg) translateZ(100px); }
-
-/* Modal for video playback */
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
+tbody tr:hover {
+  background: #1d2333;
 }
 
-.modal.is-open {
-  opacity: 1;
-  pointer-events: auto;
+details {
+  margin-top: 1rem;
+  color: var(--muted);
 }
 
-.modal video {
-  width: 80%;
-  max-width: 900px;
-  border-radius: 16px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.8);
+code {
+  background: #11131b;
+  border: 1px solid var(--border);
+  padding: 0 0.3em;
+  border-radius: 4px;
 }

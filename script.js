@@ -1,103 +1,180 @@
-(function(){
-  const cube  = document.getElementById('mkCube');
-  const scene = document.getElementById('mkScene');
+(() => {
+  const backupFilesInput = document.getElementById('backupFiles');
+  const gapMinutesInput = document.getElementById('gapMinutes');
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const summary = document.getElementById('summary');
+  const tableBody = document.querySelector('#resultsTable tbody');
 
-  /* 1) MASTER BANK — add all your work here */
-  const MASTER_WORKS = [
-    {
-      brand:"Coinbase",
-      spot:"Crypto Is For Small Businesses",
-      preview:"https://www.matthewkeithsound.com/s/Crypto-Is-For-Small-Businesses_SHORT.mp4",
-      full:"https://www.matthewkeithsound.com/s/Crypto-Is-For-Small-Businesses-y4w5.mp4"
-    },
-    {
-      brand:"Pepsi",
-      spot:"Press Play On Summer",
-      preview:"https://www.matthewkeithsound.com/s/PZS_PPOS_HeroLongform_16x9_OLV_ProRes_SHORT.mp4",
-      full:"https://www.matthewkeithsound.com/s/PZS_PPOS_HeroLongform_16x9_OLV_ProRes.mp4"
-    },
-    // { brand:"Nike", spot:"Run It Back", preview:"https://...", full:"https://..." },
-    // ...add more
-  ];
+  let latestRows = [];
 
-  /* 2) Assign 6 random unique picks to faces */
-  const FACE_NAMES = ["front","back","right","left","top","bottom"];
-  const TARGETS = {
-    front:{x:0,y:0}, back:{x:0,y:180},
-    right:{x:0,y:90}, left:{x:0,y:-90},
-    top:{x:-90,y:0}, bottom:{x:90,y:0}
-  };
+  function projectNameFromFile(file) {
+    const fromPath = (file.webkitRelativePath || '').split('/').find((segment) => {
+      return segment && segment !== 'Session File Backups' && !segment.includes('.');
+    });
+    if (fromPath) {
+      return fromPath;
+    }
 
-  function shuffle(a){ const arr=a.slice(); for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]];} return arr; }
-  function sampleUnique(arr,n){ return shuffle(arr).slice(0, Math.min(n, arr.length)); }
-  function randomInt(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+    const withoutExt = file.name.replace(/\.[^.]+$/, '');
+    const cleaned = withoutExt
+      .replace(/\s+\d{1,2}-\d{1,2}-\d{2,4}\s+\d{1,2}\.\d{2}\.\d{2}\s*(AM|PM)?$/i, '')
+      .replace(/\s+Backup\s*$/i, '')
+      .trim();
 
-  const PICKS = sampleUnique(MASTER_WORKS, 6);
-  const WORKS = {}; // face -> item
-  FACE_NAMES.forEach((face, i)=>{
-    const item = PICKS[i % PICKS.length];
-    WORKS[face] = item;
-    const v = document.querySelector(`.${face} video`);
-    if(v){ v.src = item.preview; v.load(); v.play().catch(()=>{}); }
+    return cleaned || 'Unknown Project';
+  }
+
+  function toDateKey(date) {
+    return date.toISOString().slice(0, 10);
+  }
+
+  function fmtTime(date) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function analyzeBackups(files, idleGapMinutes) {
+    const grouped = new Map();
+
+    files.forEach((file) => {
+      const stamp = new Date(file.lastModified);
+      if (Number.isNaN(stamp.getTime())) {
+        return;
+      }
+
+      const project = projectNameFromFile(file);
+      const day = toDateKey(stamp);
+      const key = `${project}::${day}`;
+
+      if (!grouped.has(key)) {
+        grouped.set(key, { project, day, times: [] });
+      }
+
+      grouped.get(key).times.push(stamp);
+    });
+
+    const idleMs = idleGapMinutes * 60 * 1000;
+    const rows = [];
+
+    grouped.forEach(({ project, day, times }) => {
+      times.sort((a, b) => a - b);
+      let minutesWorked = 0;
+      let start = times[0];
+      let prev = times[0];
+
+      for (let i = 1; i < times.length; i += 1) {
+        const current = times[i];
+        if (current - prev > idleMs) {
+          minutesWorked += (prev - start) / 60000;
+          start = current;
+        }
+        prev = current;
+      }
+
+      minutesWorked += (prev - start) / 60000;
+
+      rows.push({
+        project,
+        day,
+        hours: +(minutesWorked / 60).toFixed(2),
+        backupCount: times.length,
+        firstBackup: times[0],
+        lastBackup: times[times.length - 1],
+      });
+    });
+
+    rows.sort((a, b) => {
+      if (a.day === b.day) {
+        return a.project.localeCompare(b.project);
+      }
+      return a.day.localeCompare(b.day);
+    });
+
+    return rows;
+  }
+
+  function render(rows) {
+    tableBody.innerHTML = '';
+
+    if (!rows.length) {
+      summary.textContent = 'No usable backup file timestamps found.';
+      downloadBtn.disabled = true;
+      return;
+    }
+
+    const totalHours = rows.reduce((sum, row) => sum + row.hours, 0);
+    const dayCount = new Set(rows.map((row) => row.day)).size;
+
+    summary.textContent = `Tracked ${totalHours.toFixed(2)} total hours across ${rows.length} project/day entries and ${dayCount} day(s).`;
+
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.project}</td>
+        <td>${row.day}</td>
+        <td>${row.hours.toFixed(2)}</td>
+        <td>${row.backupCount}</td>
+        <td>${fmtTime(row.firstBackup)}</td>
+        <td>${fmtTime(row.lastBackup)}</td>
+      `;
+      tableBody.appendChild(tr);
+    });
+
+    downloadBtn.disabled = false;
+  }
+
+  function csvFromRows(rows) {
+    const header = ['Project', 'Date', 'Estimated Hours', 'Backup Count', 'First Backup', 'Last Backup'];
+    const lines = rows.map((row) => {
+      return [
+        row.project,
+        row.day,
+        row.hours.toFixed(2),
+        String(row.backupCount),
+        row.firstBackup.toISOString(),
+        row.lastBackup.toISOString(),
+      ]
+        .map((value) => `"${String(value).replaceAll('"', '""')}"`)
+        .join(',');
+    });
+
+    return [header.join(','), ...lines].join('\n');
+  }
+
+  analyzeBtn.addEventListener('click', () => {
+    const files = Array.from(backupFilesInput.files || []);
+    const gapMinutes = Number(gapMinutesInput.value);
+
+    if (!files.length) {
+      summary.textContent = 'Choose backup files first.';
+      tableBody.innerHTML = '';
+      downloadBtn.disabled = true;
+      return;
+    }
+
+    if (!Number.isFinite(gapMinutes) || gapMinutes < 1) {
+      summary.textContent = 'Idle gap must be at least 1 minute.';
+      return;
+    }
+
+    latestRows = analyzeBackups(files, gapMinutes);
+    render(latestRows);
   });
 
-  /* 3) Modal */
-  const modal = document.getElementById('mkModal');
-  const close = document.getElementById('mkClose');
-  const mvid  = document.getElementById('mkVid');
-  const mbrand= document.getElementById('mkBrand');
-  const mspot = document.getElementById('mkSpot');
+  downloadBtn.addEventListener('click', () => {
+    if (!latestRows.length) {
+      return;
+    }
 
-  function openModalForFace(face){
-    const item = WORKS[face]; if(!item) return;
-    mbrand.textContent = item.brand || '';
-    mspot.textContent  = item.spot  || '';
-    mvid.src = item.full;
-    mvid.muted = false; mvid.autoplay = true;
-    mvid.play().catch(()=>{});
-    modal.classList.add('is-open');
-  }
-  function closeModal(){
-    modal.classList.remove('is-open');
-    mvid.pause(); mvid.removeAttribute('src'); mvid.load();
-  }
-  close.addEventListener('click', closeModal);
-  modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
-
-  /* 4) No-repeat queue through all 6 faces */
-  let lastFace = null;
-  let queue = initQueue();
-  let isRolling = false;
-
-  function initQueue(){
-    let q = shuffle(FACE_NAMES);
-    if(lastFace && q[0] === lastFace){ q.push(q.shift()); }
-    return q;
-  }
-
-  function roll(){
-    if(isRolling) return;
-    isRolling = true;
-
-    if(queue.length===0) queue = initQueue();
-    const face = queue.shift();
-    const t = TARGETS[face];
-
-    const spinsX = randomInt(3,5)*360;
-    const spinsY = randomInt(3,5)*360;
-
-    cube.classList.add('is-rolling');
-    cube.style.transform = `rotateX(${spinsX + t.x}deg) rotateY(${spinsY + t.y}deg)`;
-
-    setTimeout(()=>{
-      cube.classList.remove('is-rolling');
-      lastFace = face; isRolling = false;
-      openModalForFace(face);
-    }, 3200);
-  }
-
-  scene.addEventListener('click', roll);
-  scene.addEventListener('keydown', e=>{
-    if(e.key==='Enter'||e.key===' '){ e.preventDefault(); roll(); }
+    const blob = new Blob([csvFromRows(latestRows)], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    const dateLabel = new Date().toISOString().slice(0, 10);
+    anchor.href = url;
+    anchor.download = `pro-tools-hours-${dateLabel}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
   });
 })();

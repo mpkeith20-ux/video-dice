@@ -1,43 +1,58 @@
-<!-- === MK Giant Video Die • Cosmic Look • Random 6 • No Repeats • Modal === -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MK Video Dice</title>
+  <title>Pro Tools Session Time Tracker</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <main class="app">
+    <h1>Pro Tools Session Time Tracker</h1>
+    <p class="intro">
+      Drop in files from your <strong>Session File Backups</strong> folders and this tool estimates worked time by measuring the time span of backup saves.
+    </p>
 
-<div id="mkDiceWork">
-  <div class="scene" id="mkScene" role="button" tabindex="0" aria-label="Roll the die">
-    <div class="cube" id="mkCube">
-      <!-- Faces (video tags get preview src from JS) -->
-      <div class="face front"><video muted autoplay loop playsinline preload="auto"></video></div>
-      <div class="face back"><video muted autoplay loop playsinline preload="auto"></video></div>
-      <div class="face right"><video muted autoplay loop playsinline preload="auto"></video></div>
-      <div class="face left"><video muted autoplay loop playsinline preload="auto"></video></div>
-      <div class="face top"><video muted autoplay loop playsinline preload="auto"></video></div>
-      <div class="face bottom"><video muted autoplay loop playsinline preload="auto"></video></div>
-    </div>
-  </div>
-  <div class="mk-die-label">Click (or press Enter/Space) to roll</div>
-</div>
+    <section class="controls">
+      <label for="backupFiles" class="picker-label">Choose backup files</label>
+      <input id="backupFiles" type="file" multiple>
 
-<!-- Modal Player -->
-<div class="mk-modal" id="mkModal" aria-modal="true" role="dialog">
-  <div class="mk-sheet">
-    <button class="mk-close" id="mkClose" aria-label="Close">×</button>
-    <div class="mk-aspect">
-      <video id="mkVid" controls playsinline preload="auto"></video>
-      <div class="mk-text">
-        <div class="mk-brand" id="mkBrand">Brand</div>
-        <div class="mk-spot"  id="mkSpot">Spot</div>
-      </div>
-    </div>
-  </div>
-</div>
+      <label for="gapMinutes">New session starts after this many idle minutes:</label>
+      <input id="gapMinutes" type="number" min="1" max="240" value="45">
 
-<script src="script.js" defer></script>
+      <button id="analyzeBtn">Analyze Files</button>
+      <button id="downloadBtn" disabled>Download CSV</button>
+    </section>
+
+    <section class="summary" id="summary"></section>
+
+    <section class="table-wrap" aria-live="polite">
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>Project</th>
+            <th>Date</th>
+            <th>Estimated Hours</th>
+            <th>Backup Count</th>
+            <th>First Backup</th>
+            <th>Last Backup</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <details>
+      <summary>How this estimate works</summary>
+      <ul>
+        <li>Backups are grouped by project and calendar day.</li>
+        <li>Within each day, backups are split into separate work sessions when the gap exceeds your idle threshold.</li>
+        <li>Each session contributes from first backup timestamp to last backup timestamp.</li>
+        <li>This is an estimate — manually saved backups or disabled autosave can reduce accuracy.</li>
+      </ul>
+    </details>
+  </main>
+
+  <script src="script.js" defer></script>
 </body>
 </html>
